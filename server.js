@@ -1,20 +1,34 @@
+// Importamos las librerías necesarias (¡En inglés!)
 const express = require("express");
 const app = express();
 const cors = require("cors");
 const { MercadoPagoConfig, Preference } = require("mercadopago");
 
-// PEGA TU ACCESS TOKEN ENTRE LAS COMILLAS
+// ==================================================================
+// 🔑 CONFIGURACIÓN DE MERCADO PAGO
+// ==================================================================
+// REEMPLAZA EL TEXTO DE ABAJO CON TU ACCESS TOKEN REAL (El largo)
+// Debe empezar con APP_USR- o TEST-
 const client = new MercadoPagoConfig({ accessToken: 'APP_USR-4258164784257219-020120-f00ae5c4250ef8362942d6be738a9a3c-3170201217' });
 
+// Configuramos el servidor para recibir datos JSON y permitir conexiones externas
 app.use(cors());
 app.use(express.json());
 
+// ==================================================================
+// 🌐 RUTA DE PRUEBA (Para ver si el servidor vive)
+// ==================================================================
 app.get("/", (req, res) => {
-    res.send("El servidor de Cloed Shop está vivo 🤖");
+    res.send("¡El servidor de Cloed Shop está funcionando en Render! 🚀");
 });
 
+// ==================================================================
+// 💳 RUTA PARA CREAR LA PREFERENCIA DE PAGO
+// ==================================================================
 app.post("/create_preference", async (req, res) => {
     try {
+        // 1. Recibimos los datos del producto desde tu página web
+        // body será algo como: { title: "Compra", quantity: 1, price: 1500 }
         const body = {
             items: [
                 {
@@ -24,24 +38,36 @@ app.post("/create_preference", async (req, res) => {
                     currency_id: "MXN",
                 },
             ],
+            // Rutas a donde volverá el usuario después de pagar
             back_urls: {
-                success: "https://www.google.com",
-                failure: "https://www.google.com",
-                pending: "https://www.google.com",
+                success: "https://www.cloedgamer.com", // Cambia esto por tu dominio real
+                failure: "https://www.cloedgamer.com",
+                pending: "https://www.cloedgamer.com",
             },
             auto_return: "approved",
         };
 
+        // 2. Creamos la preferencia en Mercado Pago
         const preference = new Preference(client);
         const result = await preference.create({ body });
-        res.json({ id: result.id });
+        
+        // 3. Devolvemos el ID de la preferencia a tu página web
+        res.json({
+            id: result.id, 
+        });
 
     } catch (error) {
         console.log(error);
-        res.status(500).json({ error: "Error al crear la preferencia" });
+        res.status(500).json({ error: "Error al crear la preferencia :(" });
     }
 });
 
-app.listen(8080, () => {
-    console.log("El servidor corre en el puerto 8080 🚀");
+// ==================================================================
+// 🚀 INICIAR EL SERVIDOR
+// ==================================================================
+// Render nos asigna un puerto automáticamente en process.env.PORT
+const port = process.env.PORT || 8080;
+
+app.listen(port, () => {
+    console.log(`El servidor está corriendo en el puerto ${port}`);
 });
